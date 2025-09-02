@@ -9,6 +9,7 @@
 <body>
   <div class="container">
     <h1>📄 PDF Text Extractor</h1>
+
     <div class="controls">
       <label for="pdfFile">Choose PDF:</label>
       <input type="file" id="pdfFile" accept="application/pdf">
@@ -28,6 +29,15 @@
     </div>
 
     <div class="controls">
+      <label for="ocrQuality">OCR Quality:</label>
+      <select id="ocrQuality">
+        <option value="low">Low (fast, less accurate)</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High (slow, accurate)</option>
+      </select>
+    </div>
+
+    <div class="controls">
       <button id="extractBtn">Extract</button>
       <button id="resetBtn" style="display:none;">Reset</button>
     </div>
@@ -37,8 +47,10 @@
       <span id="progressText"></span>
     </div>
 
-    <div id="status"></div>
+    <!-- ✅ This was missing -->
+    <div id="output"></div>
   </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
   <script src="script.js"></script>
