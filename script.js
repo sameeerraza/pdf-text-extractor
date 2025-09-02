@@ -10,6 +10,13 @@ const progressText = document.getElementById('progressText');
 const progressBar = document.getElementById('progressBar');
 const statusDiv = document.getElementById('status');
 const ocrQualitySelect = document.getElementById('ocrQuality');
+const modeSelect = document.getElementById('mode');
+const keywordSection = document.getElementById('keywordSection');
+
+// Toggle keyword section
+modeSelect.addEventListener('change', () => {
+    keywordSection.style.display = modeSelect.value === 'keywords' ? 'block' : 'none';
+});
 
 // Select file
 fileInput.addEventListener('change', (e) => {
@@ -52,6 +59,36 @@ function showStatus(message, type) {
 function showProgress(percent, message) {
     progressText.textContent = message;
     progressBar.value = percent;
+}
+
+// Keyword search
+function findKeywordsInText(results, keywords) {
+    const matches = [];
+
+    results.forEach(page => {
+        const pageText = page.text.toLowerCase();
+
+        keywords.forEach(keyword => {
+            const lowerKeyword = keyword.toLowerCase();
+            let index = pageText.indexOf(lowerKeyword);
+
+            while (index !== -1) {
+                const start = Math.max(0, index - 60);
+                const end = Math.min(pageText.length, index + lowerKeyword.length + 60);
+                const snippet = page.text.substring(start, end).replace(/\s+/g, ' ');
+
+                matches.push({
+                    keyword: keyword,
+                    page: page.pageNum,
+                    context: snippet
+                });
+
+                index = pageText.indexOf(lowerKeyword, index + lowerKeyword.length);
+            }
+        });
+    });
+
+    return matches;
 }
 
 // Main extraction logic
@@ -132,6 +169,52 @@ async function extractText() {
 
         const results = await batchProcess(pageNumbers, batchSize, processPage);
 
+        // Check mode
+        if (modeSelect.value === 'keywords') {
+            const keywordsInput = document.getElementById('keywords').value.trim();
+            if (!keywordsInput) {
+                showStatus('⚠️ Please enter keywords to search.', 'error');
+                progressSection.style.display = 'none';
+                extractBtn.disabled = false;
+                return;
+            }
+
+            const keywords = keywordsInput.split(',').map(k => k.trim()).filter(k => k);
+            const matches = findKeywordsInText(results, keywords);
+
+            if (matches.length > 0) {
+                let tableHtml = `
+                    <table>
+                        <tr>
+                            <th>Keyword</th>
+                            <th>Page</th>
+                            <th>Context</th>
+                        </tr>
+                `;
+
+                matches.forEach(m => {
+                    tableHtml += `
+                        <tr>
+                            <td>${m.keyword}</td>
+                            <td>${m.page}</td>
+                            <td>${m.context}</td>
+                        </tr>`;
+                });
+
+                tableHtml += `</table>`;
+                statusDiv.innerHTML = `🔎 Found ${matches.length} matches:<br>` + tableHtml;
+                statusDiv.className = 'success';
+            } else {
+                showStatus('⚠️ No matches found for given keywords.', 'error');
+            }
+
+            progressSection.style.display = 'none';
+            resetBtn.style.display = 'inline-block';
+            extractBtn.disabled = false;
+            return; // stop here, no full-text output
+        }
+
+        // Otherwise → full extracted text
         results.sort((a, b) => a.pageNum - b.pageNum);
         for (const r of results) {
             allText += `📄 PAGE ${r.pageNum}\n`;

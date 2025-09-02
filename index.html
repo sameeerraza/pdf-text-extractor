@@ -23,7 +23,20 @@
             </select>
         </div>
 
-        <button id="extractBtn">Extract Text</button>
+        <div class="controls">
+            <label for="mode">Mode:</label>
+            <select id="mode">
+                <option value="full">Extract Full Text</option>
+                <option value="keywords">Search Keywords</option>
+            </select>
+        </div>
+
+        <div class="controls" id="keywordSection" style="display:none;">
+            <label for="keywords">Keywords (comma separated):</label>
+            <input type="text" id="keywords" placeholder="e.g. interest, fees, collection cost">
+        </div>
+
+        <button id="extractBtn">Extract</button>
         <button id="downloadBtn" style="display:none;">Download Text</button>
         <button id="resetBtn" style="display:none;">Reset</button>
 
