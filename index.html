@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF OCR Extractor</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.1/dist/tesseract.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>📑 PDF OCR Extractor</h1>
+
+        <input type="file" id="fileInput" accept="application/pdf">
+
+        <div class="controls">
+            <label for="ocrQuality">OCR Quality:</label>
+            <select id="ocrQuality">
+                <option value="1.5">Low</option>
+                <option value="2">Medium</option>
+                <option value="2.5" selected>High</option>
+            </select>
+        </div>
+
+        <button id="extractBtn">Extract Text</button>
+        <button id="downloadBtn" style="display:none;">Download Text</button>
+        <button id="resetBtn" style="display:none;">Reset</button>
+
+        <div id="progressSection" style="display:none;">
+            <p id="progressText">Starting...</p>
+            <progress id="progressBar" value="0" max="100"></progress>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
