@@ -12,7 +12,6 @@ document.getElementById("extractBtn").addEventListener("click", async () => {
   const quality = document.getElementById("ocrQuality").value;
   const mode = document.getElementById("mode").value;
   const outputDiv = document.getElementById("output");
-  outputDiv.innerHTML = "<p>Processing... Please wait.</p>";
 
   if (fileInput.files.length === 0) {
     alert("Please upload a PDF file.");
@@ -37,6 +36,16 @@ document.getElementById("extractBtn").addEventListener("click", async () => {
     if (quality === "low") dpi = 72;
     else if (quality === "medium") dpi = 150;
     else dpi = 300;
+
+    // ✅ Show progress bar
+    const progressSection = document.getElementById("progressSection");
+    const progressBar = document.getElementById("progressBar");
+    const progressText = document.getElementById("progressText");
+
+    progressSection.style.display = "block";
+    progressBar.value = 0;
+    progressBar.max = pdf.numPages;
+    progressText.textContent = `Processing 0 of ${pdf.numPages} pages...`;
 
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
@@ -79,7 +88,17 @@ document.getElementById("extractBtn").addEventListener("click", async () => {
           }
         }
       }
+
+      // ✅ Update progress
+      progressBar.value = pageNum;
+      progressText.textContent = `Processing ${pageNum} of ${pdf.numPages} pages...`;
     }
+
+    // Hide progress after completion
+    progressText.textContent = "✅ Processing complete!";
+    setTimeout(() => {
+      progressSection.style.display = "none";
+    }, 1500);
 
     // Display results
     let html = "";
@@ -112,4 +131,5 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   document.getElementById("keywords").value = "";
   document.getElementById("output").innerHTML = "";
   document.getElementById("resetBtn").style.display = "none";
+  document.getElementById("progressSection").style.display = "none";
 });
