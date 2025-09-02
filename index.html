@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Text Extractor - Free OCR Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .feature-tags {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .main-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .upload-zone {
+            border: 3px dashed rgba(255,255,255,0.5);
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            margin: 30px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .upload-zone:hover {
+            border-color: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .upload-zone.dragover {
+            border-color: #4CAF50;
+            background: rgba(76,175,80,0.2);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .upload-text {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .upload-subtext {
+            opacity: 0.7;
+            font-size: 1rem;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-info {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .file-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            min-width: 150px;
+        }
+
+        button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border-color: #4CAF50;
+        }
+
+        button.primary:hover {
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+            box-shadow: 0 10px 20px rgba(76,175,80,0.3);
+        }
+
+        .progress-section {
+            margin: 30px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 15px;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .status.success {
+            background: rgba(76,175,80,0.3);
+            border: 1px solid rgba(76,175,80,0.5);
+        }
+
+        .status.error {
+            background: rgba(244,67,54,0.3);
+            border: 1px solid rgba(244,67,54,0.5);
+        }
+
+        .status.info {
+            background: rgba(33,150,243,0.3);
+            border: 1px solid rgba(33,150,243,0.5);
+        }
+
+        .features {
+            margin-top: 60px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .feature {
+            text-align: center;
+            padding: 30px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .feature h3 {
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+
+        .feature p {
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 60px;
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .main-card {
+                padding: 20px;
+            }
+            
+            .upload-zone {
+                padding: 40px 10px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .file-details {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 PDF Text Extractor</h1>
+            <p>Extract text from scanned PDFs using advanced OCR technology</p>
+            <div class="feature-tags">
+                <span class="tag">🚀 Free Forever</span>
+                <span class="tag">🔒 Private & Secure</span>
+                <span class="tag">⚡ Fast Processing</span>
+                <span class="tag">📱 Works on Any Device</span>
+            </div>
+        </div>
+
+        <div class="main-card">
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Drop your scanned PDF here</div>
+                <div class="upload-subtext">or click to browse files • Max 10MB</div>
+            </div>
+
+            <input type="file" id="fileInput" accept=".pdf">
+
+            <div class="file-info" id="fileInfo">
+                <div class="file-details">
+                    <div>
+                        <strong id="fileName">document.pdf</strong>
+                        <div id="fileSize">2.5 MB</div>
+                    </div>
+                    <div id="fileIcon">📄</div>
+                </div>
+            </div>
+
+            <div class="progress-section" id="progressSection">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Processing...</div>
+            </div>
+
+            <div class="status" id="status"></div>
+
+            <div class="buttons">
+                <button id="extractBtn" class="primary" disabled>🔍 Extract Text</button>
+                <button id="downloadBtn" style="display: none;">💾 Download Text File</button>
+                <button id="resetBtn" style="display: none;">🔄 Start Over</button>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div class="feature-icon">🤖</div>
+                <h3>Advanced OCR</h3>
+                <p>Powered by Tesseract.js, our OCR engine can extract text from even poor quality scans with high accuracy.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">🛡️</div>
+                <h3>100% Private</h3>
+                <p>All processing happens in your browser. Your documents never leave your device, ensuring complete privacy.</p>
+            </div>
+            <div class="feature">
+                <div class="feature-icon">⚡</div>
+                <h3>Lightning Fast</h3>
+                <p>No server uploads needed. Process your PDFs instantly without waiting for slow cloud services.</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Made with ❤️ • Process unlimited PDFs for free • No registration required</p>
+        </div>
+    </div>
+
+    <script>
+        // Set up PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let selectedFile = null;
+        let extractedText = '';
+
+        // DOM elements
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const extractBtn = document.getElementById('extractBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const progressSection = document.getElementById('progressSection');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const status = document.getElementById('status');
+
+        // Event listeners
+        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('dragover', handleDragOver);
+        uploadZone.addEventListener('drop', handleDrop);
+        uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+        fileInput.addEventListener('change', handleFileSelect);
+        extractBtn.addEventListener('click', extractText);
+        downloadBtn.addEventListener('click', downloadText);
+        resetBtn.addEventListener('click', resetApp);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        }
+
+        function handleFile(file) {
+            if (file.type !== 'application/pdf') {
+                showStatus('❌ Please select a PDF file.', 'error');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showStatus('❌ File size must be less than 10MB.', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+            
+            fileInfo.style.display = 'block';
+            extractBtn.disabled = false;
+            
+            showStatus('✅ File uploaded successfully! Click "Extract Text" to begin processing.', 'success');
+        }
+
+        async function extractText() {
+            if (!selectedFile) return;
+
+            extractBtn.disabled = true;
+            downloadBtn.style.display = 'none';
+            resetBtn.style.display = 'none';
+            progressSection.style.display = 'block';
+            extractedText = '';
+
+            try {
+                showProgress(5, '📖 Loading PDF document...');
+
+                const arrayBuffer = await selectedFile.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+                showProgress(15, '📊 Analyzing document structure...');
+
+                const totalPages = pdf.numPages;
+                let allText = `📄 EXTRACTED TEXT FROM: ${selectedFile.name}\n`;
+                allText += `📅 Processed on: ${new Date().toLocaleString()}\n`;
+                allText += `📑 Total Pages: ${totalPages}\n`;
+                allText += `${'='.repeat(60)}\n\n`;
+
+                for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                    const progress = 15 + (pageNum / totalPages) * 70;
+                    showProgress(progress, `🔍 Processing page ${pageNum} of ${totalPages}...`);
+
+                    const page = await pdf.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: 2.5 });
+
+                    // Create canvas
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    // Render PDF page to canvas
+                    await page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    }).promise;
+
+                    // Convert canvas to image data
+                    const imageData = canvas.toDataURL('image/png');
+
+                    // Perform OCR
+                    showProgress(progress + 5, `🤖 Extracting text from page ${pageNum}...`);
+                    const result = await Tesseract.recognize(imageData, 'eng', {
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                const ocrProgress = progress + 5 + (m.progress * 10);
+                                showProgress(ocrProgress, `🤖 OCR processing page ${pageNum}... ${Math.round(m.progress * 100)}%`);
+                            }
+                        }
+                    });
+
+                    allText += `📄 PAGE ${pageNum}\n`;
+                    allText += `-`.repeat(40) + '\n';
+                    allText += result.data.text.trim() + '\n\n';
+                }
+
+                extractedText = allText;
+                showProgress(100, '🎉 Text extraction completed!');
+
+                setTimeout(() => {
+                    progressSection.style.display = 'none';
+                    downloadBtn.style.display = 'inline-block';
+                    resetBtn.style.display = 'inline-block';
+                    showStatus(`🎉 Successfully extracted text from ${totalPages} page(s)! Click download to save your file.`, 'success');
+                }, 1000);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ Error extracting text: ' + error.message, 'error');
+                progressSection.style.display = 'none';
+            } finally {
+                extractBtn.disabled = false;
+            }
+        }
+
+        function downloadText() {
+            if (!extractedText) return;
+
+            const blob = new Blob([extractedText], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = selectedFile.name.replace('.pdf', '_extracted_text.txt');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showStatus('💾 Text file downloaded successfully!', 'success');
+        }
+
+        function resetApp() {
+            selectedFile = null;
+            extractedText = '';
+            fileInput.value = '';
+            fileInfo.style.display = 'none';
+            extractBtn.disabled = true;
+            downloadBtn.style.display = 'none';
+            resetBtn.style.display = 'none';
+            progressSection.style.display = 'none';
+            status.style.display = 'none';
+            
+            uploadZone.innerHTML = `
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Drop your scanned PDF here</div>
+                <div class="upload-subtext">or click to browse files • Max 10MB</div>
+            `;
+        }
+
+        function showProgress(percent, text) {
+            progressFill.style.width = `${Math.min(percent, 100)}%`;
+            progressText.textContent = text;
+        }
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 6000);
+            }
+        }
+
+        // Initial status
+        showStatus('🚀 Ready to extract text from your scanned PDFs! Upload a file to get started.', 'info');
+    </script>
+</body>
+</html>
